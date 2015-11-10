@@ -28,7 +28,7 @@ int main(int *argc, char *argv[])
 {
 	SOCKET sockfd;
 	struct sockaddr_in server_in;
-	char buffer_in[1024], buffer_out[1024],input[1024];
+	char buffer_in[1024], buffer_out[1024]="",input[1024];
 	int recibidos=0,enviados=0;
 	int estado=S_HELO;
 	char option;
@@ -122,67 +122,37 @@ int main(int *argc, char *argv[])
 					switch(estado)
 					{
 					case S_HELO:
-						estado=S_DATA;
+						estado=S_ORIG;
 						// Se recibe el mensaje de bienvenida
 						break;
-					/*case S_USER:
-						// establece la conexion de aplicacion 
-						printf("CLIENTE> Introduzca el usuario (enter para salir): ");
-						gets(input);//Tomo lo que introduzca el usuario. 
-						if(strlen(input)==0)//La misión de la función strlen es contar el nº de carácteres de una cadena.
-						{
-							sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",SD,CRLF);//Imprimir de forma segura. 
-							estado=S_QUIT; //Si pulso enter, se acaba la conexión al pasarme al estado S_QUIT. 
-						}
-						else
-
-						sprintf_s (buffer_out, sizeof(buffer_out), "%s %s%s",SC,input,CRLF);
-						break;
-						//Autentificación del usuario. 
-					case S_PASS:
-						printf("CLIENTE> Introduzca la clave (enter para salir): ");
-						gets(input);//Tomo la cadena que introduzca el usuario. 
-						if(strlen(input)==0)//En caso de ser enter, salgo de la conexión por estado S_QUIT.
-						{
-							sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",SD,CRLF);
-							estado=S_QUIT;
-						}
-						else//De otra forma se imprime la contraseña y se transmite. 
-							sprintf_s (buffer_out, sizeof(buffer_out), "%s %s%s",PW,input,CRLF);
-						break;*/
-						//Una vez establecida la conexión, y autentificado el usuario se pasa a transmitir los datos.
-					case S_DATA:
+					
+					case S_ORIG:
 						printf("CLIENTE>Introduzca su direccion: (enter o QUIT para salir): ");
-						gets(input);
-						sprintf_s (buffer_out, sizeof(buffer_out), "MAIL FROM:%s%s",input,CRLF);
+						gets(input); 
+						sprintf_s (buffer_out, sizeof(buffer_out), "MAIL FROM: %s%s",input,CRLF);
+						sscanf(buffer_in,"%d",&com);
+						if(com>=200 && com<300)
+							estado=S_DEST;						
+						break;
+					case S_DEST:
 						printf("CLIENTE>Introduzca la direccion de destino: (enter o QUIT para salir): ");
 						gets(input);
-						sprintf_s (buffer_out, sizeof(buffer_out), "RCPT TO:%s%s",input,CRLF);
-
-						sprintf_s (buffer_out, sizeof(buffer_out), "DATA%s",CRLF);
-
+						sprintf_s (buffer_out, sizeof(buffer_out), "RCPT TO:%s%s",input,CRLF);	
+							estado=S_DATA;				
+						break;
+					case S_DATA:
+						sscanf(buffer_in,"%d",&com);
+						if(com>=200 && com<300){
 						
-						printf("CLIENTE>Nombre del destinatario: (enter o QUIT para salir): ");
-						gets(input);
-						sprintf_s (buffer_out, sizeof(buffer_out), "to:%s%s",input,CRLF);
-
-						printf("CLIENTE>Nombre del remitente: (enter o QUIT para salir): ");
-						gets(input);
-						sprintf_s (buffer_out, sizeof(buffer_out), "from:%s%s",input,CRLF);
-
-						printf("CLIENTE>Asunto: (enter o QUIT para salir): ");
-						gets(input);
-						sprintf_s (buffer_out, sizeof(buffer_out), "subject:%s%s",input,CRLF);
+						sprintf_s (buffer_out, sizeof(buffer_out), "DATA%s",CRLF);	
+						estado=S_MENS;} else estado=S_DEST;
+						break;
+					case S_MENS:
+																							
 						printf("CLIENTE>Introduce el mensaje: (enter o QUIT para salir): ");
-						gets(input);
+						gets(input);						
 						sprintf_s (buffer_out, sizeof(buffer_out), "%s%s.%s",input,CRLF,CRLF);
-						if(strlen(input)==0)
-						{
-							sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",SD,CRLF);
-							estado=S_QUIT;//En caso de introducir enter, cierro la conexión al estar en el estado S_QUIT:
-						}
-						else//En otro caso se imprime lo que el usuario escriba por teclado. 
-							sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",input,CRLF);
+						estado=S_ORIG;
 						break;
 				 
 				
@@ -203,8 +173,7 @@ int main(int *argc, char *argv[])
 					if(estado!=S_HELO){//En todo momento que el estado no sea S_HELO, se ejecutan las funciones recv y send. Las cuales
 						              //son las que nos permitirán transmitir y recibir información del servidor. 
 					enviados=send(sockfd,buffer_out,(int)strlen(buffer_out),0);
-					 if(com==0){//Con el entero 'com' compruebo si estoy en la primera iteración o en el resto.
-						com=1;
+					 
 						if(enviados<0) {//En el caso de que la función send devuelva un valor negativo informo al usuario del error. 
 							DWORD error=GetLastError();//Tomo el tipo de error producido. 
 							printf("CLIENTE> Error %d en el envio de datos\r\n",error);//Imprimo el error al usuario. 
@@ -225,7 +194,7 @@ int main(int *argc, char *argv[])
 							estado=S_QUIT;
 						 }
 						}
-					 }}
+					 }
             /********************************************************************************************************************************
 		    Envio de mensajes TCP.
 			int recv(int socket, void *rcvBuffer, unsigned int bufferLength, int flags);
@@ -257,8 +226,8 @@ int main(int *argc, char *argv[])
 					{
 						buffer_in[recibidos]=0x00;//Los arrays en C deben acabar en 0x00.
 						printf(buffer_in);//Imprimo lo que recibo. 
-						if(estado!=S_DATA && strncmp(buffer_in,OK,2)==0) 
-							estado++;  
+						//if(estado!=S_DATA && strncmp(buffer_in,OK,2)==0) 
+							//estado++;  
 					}
 
 				}while(estado!=S_QUIT);

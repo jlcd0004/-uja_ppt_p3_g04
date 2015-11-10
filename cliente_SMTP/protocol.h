@@ -18,7 +18,10 @@
 
 //ESTADOS
 #define S_HELO 0
-#define S_DATA 3
+#define S_ORIG 7
+#define S_DEST 8
+#define S_MENS 3
+#define S_DATA 9
 #define S_QUIT 4
 #define S_EXIT 5
 
