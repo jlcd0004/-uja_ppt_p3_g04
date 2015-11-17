@@ -28,12 +28,12 @@ int main(int *argc, char *argv[])
 {
 	SOCKET sockfd;
 	struct sockaddr_in server_in;
-	char buffer_in[1024], buffer_out[1024]="",input[1024];
+	char buffer_in[1024], buffer_out[1024]="",input[1024],input2[1024];
 	int recibidos=0,enviados=0;
 	int estado=S_HELO;
 	char option;
 	int com = 0; 
-
+	int control = 0;
 	WORD wVersionRequested;
 	WSADATA wsaData;
 	int err;
@@ -127,31 +127,54 @@ int main(int *argc, char *argv[])
 						break;
 					
 					case S_ORIG:
-						printf("CLIENTE>Introduzca su direccion: (enter o QUIT para salir): ");
-						gets(input); 
+						printf("CLIENTE>Introduzca su direccion: (enter para salir): ");
+						gets(input);
+						if(strlen(input)==0){
+							sprintf_s (buffer_out, sizeof(buffer_out), "%s %s",SD,CRLF);
+							estado=S_QUIT;
+						}else{
 						sprintf_s (buffer_out, sizeof(buffer_out), "MAIL FROM: %s%s",input,CRLF);
 						sscanf(buffer_in,"%d",&com);
 						if(com>=200 && com<300)
-							estado=S_DEST;						
+							estado=S_DEST;	}					
 						break;
 					case S_DEST:
-						printf("CLIENTE>Introduzca la direccion de destino: (enter o QUIT para salir): ");
+						printf("CLIENTE>Introduzca la direccion de destino: (enter para salir): ");
 						gets(input);
+						if(strlen(input)==0){
+							sprintf_s (buffer_out, sizeof(buffer_out), "%s %s",SD,CRLF);
+							estado=S_QUIT;
+						}else{
 						sprintf_s (buffer_out, sizeof(buffer_out), "RCPT TO:%s%s",input,CRLF);	
-							estado=S_DATA;				
+						estado=S_DATA;	}			
 						break;
+					
 					case S_DATA:
 						sscanf(buffer_in,"%d",&com);
 						if(com>=200 && com<300){
 						
 						sprintf_s (buffer_out, sizeof(buffer_out), "DATA%s",CRLF);	
-						estado=S_MENS;} else estado=S_DEST;
+						} else estado=S_SUBJ;
 						break;
+					case S_SUBJ:	
+						printf("CLIENTE>Introduce el asunto(enter para salir): ");	
+						gets(input2);
+						if(strlen(input2)==0){
+							sprintf_s (buffer_out, sizeof(buffer_out), "%s %s",SD,CRLF);
+							estado=S_QUIT;
+							}else{
+								sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",input2,CRLF);
+								estado=S_MENS;}
 					case S_MENS:
-																							
-						printf("CLIENTE>Introduce el mensaje: (enter o QUIT para salir): ");
-						gets(input);						
-						sprintf_s (buffer_out, sizeof(buffer_out), "%s%s.%s",input,CRLF,CRLF);
+						
+						printf("CLIENTE>Introduce el mensaje(fin para acabar): ");
+						do{
+						 gets(input);	
+						 if(strcmp(input,"fin")!=0)
+						sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",input,CRLF);
+						 else control=1;
+						}while(control=0);
+						sprintf_s (buffer_out, sizeof(buffer_out), "%s.%s",CRLF,CRLF);
 						estado=S_ORIG;
 						break;
 				 

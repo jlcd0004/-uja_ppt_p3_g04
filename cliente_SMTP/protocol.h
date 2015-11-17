@@ -18,12 +18,13 @@
 
 //ESTADOS
 #define S_HELO 0
-#define S_ORIG 7
-#define S_DEST 8
+#define S_ORIG 1
+#define S_DEST 2
 #define S_MENS 3
-#define S_DATA 9
-#define S_QUIT 4
-#define S_EXIT 5
+#define S_DATA 4
+#define S_QUIT 5
+#define S_EXIT 6
+#define S_SUBJ 7
 
 //PUERTO DEL SERVICIO
 #define TCP_SERVICE_PORT	25
