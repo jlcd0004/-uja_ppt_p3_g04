@@ -26,6 +26,8 @@
 #define S_EXIT 6
 #define S_SUBJ 7
 
+
+
 //PUERTO DEL SERVICIO
 #define TCP_SERVICE_PORT	25
 

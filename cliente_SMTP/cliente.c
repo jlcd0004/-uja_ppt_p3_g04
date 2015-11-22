@@ -26,12 +26,16 @@ Autor: Juan Carlos Cuevas Martínez
 
 int main(int *argc, char *argv[])
 {
+	 time_t tiempo = time(0);
+    struct tm *tlocal = localtime(&tiempo);
+	char output[128];
 	SOCKET sockfd;
 	struct sockaddr_in server_in;
-	char buffer_in[1024], buffer_out[1024]="",input[1024],input2[1024];
+	char buffer_in[2024]="", buffer_out[2024]="",input[2024]="",asunto[2024]="",salida[2024]="",to[2024]="",from[2024]="";
 	int recibidos=0,enviados=0;
 	int estado=S_HELO;
 	char option;
+	int valor;
 	int com = 0; 
 	int control = 0;
 	WORD wVersionRequested;
@@ -134,6 +138,7 @@ int main(int *argc, char *argv[])
 							estado=S_QUIT;
 						}else{
 						sprintf_s (buffer_out, sizeof(buffer_out), "MAIL FROM: %s%s",input,CRLF);
+						strcat(from,input);
 						sscanf(buffer_in,"%d",&com);
 						if(com>=200 && com<300)
 							estado=S_DEST;	}					
@@ -146,6 +151,7 @@ int main(int *argc, char *argv[])
 							estado=S_QUIT;
 						}else{
 						sprintf_s (buffer_out, sizeof(buffer_out), "RCPT TO:%s%s",input,CRLF);	
+						strcat(to,input);
 						estado=S_DATA;	}			
 						break;
 					
@@ -154,27 +160,31 @@ int main(int *argc, char *argv[])
 						if(com>=200 && com<300){
 						
 						sprintf_s (buffer_out, sizeof(buffer_out), "DATA%s",CRLF);	
-						} else estado=S_SUBJ;
+						estado=S_SUBJ;}else estado = S_DEST;
 						break;
 					case S_SUBJ:	
 						printf("CLIENTE>Introduce el asunto(enter para salir): ");	
-						gets(input2);
-						if(strlen(input2)==0){
+						gets(asunto);
+						if(strlen(asunto)==0){
 							sprintf_s (buffer_out, sizeof(buffer_out), "%s %s",SD,CRLF);
 							estado=S_QUIT;
 							}else{
-								sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",input2,CRLF);
 								estado=S_MENS;}
+					
 					case S_MENS:
 						
 						printf("CLIENTE>Introduce el mensaje(fin para acabar): ");
 						do{
 						 gets(input);	
-						 if(strcmp(input,"fin")!=0)
-						sprintf_s (buffer_out, sizeof(buffer_out), "%s%s",input,CRLF);
-						 else control=1;
-						}while(control=0);
-						sprintf_s (buffer_out, sizeof(buffer_out), "%s.%s",CRLF,CRLF);
+						 
+						 strftime(output,128,"%d/%m/%y %H:%M:%S",tlocal);
+							if(strcmp(input,"fin")!=0){
+								valor = 1;
+							strcat(salida,CRLF);
+							strcat(salida,input);}else valor = 0;
+						 
+						}while(valor==1);
+						sprintf_s (buffer_out, sizeof(buffer_out), "Subject: %s%sTo: %s%sFrom: %s%sDate: %s%s%s%s.%s",asunto,CRLF,to,CRLF,from,CRLF,output,CRLF,salida,CRLF,CRLF);
 						estado=S_ORIG;
 						break;
 				 
